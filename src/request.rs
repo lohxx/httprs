@@ -1,5 +1,3 @@
-use super::send;
-
 use std::fmt::Debug;
 
 const HTTP_PORT: &str = "80";
@@ -8,12 +6,12 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 
 #[derive(Debug)]
 pub struct Request {
-    hostname: String,
-    path: String,
-    query_params: Option<String>,
-    headers: Option<String>,
-    method: Option<String>,
-    server_address: String
+    pub hostname: String,
+    pub path: String,
+    pub query_params: Option<String>,
+    pub headers: Option<String>,
+    pub method: Option<String>,
+    pub server_address: String
 }
 
 pub struct Response {}
@@ -45,11 +43,10 @@ impl Request {
         }
     }
 
-    pub fn get(&self) -> String {
-        String::from("")
-    }
+    pub fn get(uri: &str, connection: Option<String>) -> Self {
+        let request = Request::new(uri);
 
-    fn send() {
+        return request;
 
     }
 }

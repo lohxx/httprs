@@ -4,33 +4,58 @@ extern crate native_tls;
 use std::io;
 use io::Read;
 use io::Write;
-use native_tls::TlsConnector;
+use native_tls::{TlsConnector, TlsStream};
 
 use rustls::*;
 use webpki;
 use webpki_roots;
 
+use std::fmt::Debug;
 use std::net::TcpStream;
 
-fn tls_client_session(hostname: &str) -> rustls::ClientSession {
-    let mut config = rustls::ClientConfig::new();
-    config
-        .root_store
-        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-
-    rustls::ClientSession::new(
-        std::sync::Arc::new(config), 
-        webpki::DNSNameRef::try_from_ascii_str(hostname).unwrap())
+#[derive(Debug)]
+pub struct Connection {
+    address: String,
+    tcp_socket: TcpStream,
+    wants_secure_connection: bool, 
+    tls_connector: TlsConnector
 }
 
-fn send(server: ) {
-    let connector = TlsConnector::new().unwrap();
-    let socket = std::net::TcpStream::connect(&address.as_str())
-        .expect("Não conseguiu se conectar no socket");
-    
-    let mut stream = connector.connect(hostname_without_path, socket).unwrap();
+impl Connection {
+    pub fn new(name: &str, secure_connection: bool) -> Self {
+        let socket = TcpStream::connect("github.com:443")
+            .expect("Não foi possivel se conectar no socket");
 
-    let request = format!("GET {} HTTP/1.1\r\nConnection: close\r\nUser-Agent: teste\r\nAccept: */*\r\nHost: {}\r\n\r\n", path_params, hostname_without_path);
-    stream.write_all(request.as_bytes()).unwrap();
+        Self {
+            address: name.to_string(),
+            tcp_socket: socket,
+            tls_connector: TlsConnector::new().unwrap(),
+            wants_secure_connection: secure_connection
+        }
+    }
+
+    fn send_via_secure_connection(&self, request: &str) -> Vec<u8> {
+        let mut response = vec![];
+
+        let mut stream = self.tls_connector.connect(
+            self.address.as_str(),
+            &self.tcp_socket
+        ).unwrap();
+
+        stream.write_all(request.as_bytes());
+
+        stream.read_to_end(&mut response);
+
+        return response;
+    }
+
+    pub fn send(&self, request: String) -> Vec<u8> {     
+        if self.wants_secure_connection {
+            return self.send_via_secure_connection(request.as_str());            
+        }
+
+        // Implementar envio via conexão não segura.
+        vec![]
+    }
 
 }
