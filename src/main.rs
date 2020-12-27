@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
-
-
+#![allow(unused_variables)]
+#![allow(unused_must_use)]
 
 mod request;
 mod connection;
@@ -17,6 +17,11 @@ fn main() -> std::io::Result<()> {
         .expect("É necessario fornecer um endereço");
 
     let response = Request::get(&uri);
+
+    let head_response = Request::head(&uri);
+
+    println!("{}", head_response);
+    //println!("{}", response);
 
     Ok(())
 }

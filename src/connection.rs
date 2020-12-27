@@ -22,8 +22,8 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn new(name: &String, secure_connection: bool) -> Self {
-        let socket = TcpStream::connect("github.com:443")
+    pub fn new(name: &String, secure_connection: bool, server_address: &String) -> Self {
+        let socket = TcpStream::connect(server_address)
             .expect("Não foi possivel se conectar no socket");
 
         Self {
