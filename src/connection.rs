@@ -22,7 +22,7 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn new(name: &str, secure_connection: bool) -> Self {
+    pub fn new(name: &String, secure_connection: bool) -> Self {
         let socket = TcpStream::connect("github.com:443")
             .expect("Não foi possivel se conectar no socket");
 
@@ -34,6 +34,7 @@ impl Connection {
         }
     }
 
+    /// Envia a requisição para o servidor usando um meio criptografado.
     fn send_via_secure_connection(&self, request: &str) -> Vec<u8> {
         let mut response = vec![];
 

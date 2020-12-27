@@ -2,4 +2,4 @@ pub mod connection;
 pub mod request;
 
 pub use request::Request;
-pub use connection::send;
+pub use connection::Connection;
