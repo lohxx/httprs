@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::collections::HashMap;
 
 use super::Connection;
 
@@ -22,30 +23,37 @@ pub struct Request {
 
 #[derive(Debug)]
 pub struct Headers {
-    headers: Vec<String>
+    headers: HashMap<String, String>
 }
 
 impl Display for Headers {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-        f.write_str(self.headers.as_slice().join("\r\n").as_str())
+        let mut headers_as_string = String::from("");
+
+        for (k, v) in self.headers.iter() {
+            headers_as_string = format!("{}{}: {}\r\n", headers_as_string, k, v);
+        }
+
+        f.write_str(headers_as_string.as_str())
     }
 }
 
 impl Headers {
-    pub fn new(items: Vec<String>) -> Self {
+    pub fn new(items: Vec<(&str, &str)>) -> Self {
        let mut headers = Self {
-           headers: vec![]
+           headers: HashMap::new()
        };
 
-       for value in items {
-           headers.headers.push(value);
+       for (key, value) in items {
+           headers.headers.insert(key.to_string(), value.to_string());
        }
 
        headers
     }
 
-    fn insert(&mut self, value: String) {
-        self.headers.push(value);
+    fn insert(&mut self, value: (String, String)) {
+        let (k, v) = value;
+        self.headers.insert(k, v);
     }
 }
 
@@ -95,7 +103,7 @@ impl Request {
         uri: &str,
         method: Option<Method>,
         body: Option<String>,
-        mut headers: Option<Vec<String>>
+        headers: Option<Vec<(&str, &str)>>
     ) -> Self {
 
         let (host, port) = Request::scheme_port(&uri);
@@ -112,25 +120,19 @@ impl Request {
         }
 
         let default_headers = vec![
-            String::from("Connection: close"), 
-            format!("Host: {}", host), 
-            String::from("Accept: */*")];
+            ("Accept", "*/*"),
+            ("Connection", "close"),
+            ("Host", hostname_without_path),
+        ];
 
-        let new_headers: Vec<String> = match headers {
-            Some(mut h) => {
-                for new_header in default_headers.iter() {
-                    h.push(new_header.clone());
-                }
-                h
-            },
-            None => default_headers
-        };
+        let map_headers = Headers::new(
+            headers.unwrap_or(default_headers));
 
         Self {
             query_params: None,
+            headers: map_headers,
             method: method.unwrap(),
             path: String::from(path_params),
-            headers: Headers::new(new_headers),
             body: body.unwrap_or(String::from("")),
             wants_secure_connection: secure_connection,
             hostname: String::from(hostname_without_path),
@@ -149,6 +151,8 @@ impl Request {
     fn raw_request(uri: &str, method: Method) -> String {
         let request = Request::new(
             uri, Some(method), None, None);
+        
+        dbg!(&request);
 
         let bytes = Connection::new(
             &request.hostname,
@@ -167,10 +171,32 @@ impl Request {
         Request::raw_request(uri, Method::HEAD)
     }
 
-    pub fn post(uri: &str, data: Option<String>) {
-        let extra_headers = String::from("Content-Type: application/json\r\n");
+    pub fn post(uri: &str, data: Option<String>, content_type: Option<&str>) -> Self {
+        let mut extra_headers: Vec<(&str, &str)> = vec![];
+        
+        let content_length = match data {
+            Some(content) => format!("{}", content.len()),
+            None => String::from("")
+        };
+
+        if data.is_some() {
+            extra_headers.push(
+                ("Content-Length", content_length.as_str())
+            );
+        }
+
+        if content_type.is_some() {
+            extra_headers.push(("Content-Type", content_type.unwrap()));
+        }
+
         let request = Request::new(
-            uri, Some(Method::POST), None, Some(vec![extra_headers]));
+            uri,
+            Some(Method::POST),
+            data,
+            Some(extra_headers)
+        );
+
+        request
     }
 
     pub fn patch(uri: &str, data: Option<String>) {}

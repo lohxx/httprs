@@ -16,12 +16,18 @@ fn main() -> std::io::Result<()> {
     let uri = args.next()
         .expect("É necessario fornecer um endereço");
 
-    let response = Request::get(&uri);
+    let response = Request::post(
+        &uri,
+        Some(String::from("{'id': 1, 'title': 'teste_post'}")),
+        Some("application/json")
+    );
 
-    let head_response = Request::head(&uri);
+    //let get_response = Request::get(&uri);
 
-    println!("{}", head_response);
-    //println!("{}", response);
+    //let head_response = Request::head(&uri);
+
+    println!("{}", response);
+    //println!("{}", get_response);
 
     Ok(())
 }
