@@ -4,11 +4,11 @@ use std::collections::HashMap;
 
 
 #[derive(Debug)]
-pub struct Headers {
-    headers: HashMap<String, String>
+pub struct Headers<'a> {
+    headers: HashMap<&'a str, &'a str>
 }
 
-impl Display for Headers {
+impl Display for Headers<'_> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
         let mut headers_as_string = String::from("");
 
@@ -20,21 +20,22 @@ impl Display for Headers {
     }
 }
 
-impl Headers {
-    pub fn new(items: Vec<(&str, &str)>) -> Self {
+impl <'a>Headers<'a> {
+    /// Adiciona multiplos headers ao mapeamento.
+    pub fn new(items: Vec<(&'a str, &'a str)>) -> Self {
        let mut headers = Self {
            headers: HashMap::new()
        };
 
        for (key, value) in items {
-           headers.headers.insert(key.to_string(), value.to_string());
+           headers.headers.insert(key, value);
        }
 
        headers
     }
 
-    pub fn insert(&mut self, value: (&str, &str)) {
-        let (k, v) = value;
-        self.headers.insert(k.to_string(), v.to_string());
+    /// Adiciona um novo header
+    pub fn insert(&mut self, value: (&'a str, &'a str)) {
+        self.headers.insert(value.0, value.1);
     }
 }

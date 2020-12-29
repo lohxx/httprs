@@ -14,13 +14,15 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 pub struct Request<'a> {
     pub path: &'a str,
     pub method: Method,
-    pub headers: Headers,
+    pub headers: Headers<'a>,
     pub hostname: &'a str,
     pub body: &'static str,
 
     server_address: (&'a str, &'a str),
     wants_secure_connection: bool
 }
+
+// TODO: Lidar com compressão e conexões persistentes.
 
 
 impl Display for Request<'_> {
@@ -41,7 +43,7 @@ impl <'a>Request<'a> {
         uri: &'a str,
         method: Option<Method>,
         body: Option<&'static str>,
-        headers: Option<Vec<(&str, &str)>>
+        headers: Option<Vec<(&'a str, &'a str)>>
     ) -> Self {
 
         let (host, port) = Request::scheme_port(&uri);
@@ -88,7 +90,12 @@ impl <'a>Request<'a> {
         }
     }
 
-    fn raw_request(uri: &str, method: Method, data: &'static str, headers: Option<Vec<(&str, &str)>>) -> String {
+    fn raw_request(
+        uri: &str,
+        method: Method,
+        data: &'static str,
+        headers: Option<Vec<(&str, &str)>>) -> String {
+
         let request = Request::new(
             uri, Some(method), Some(data), headers);
 
@@ -111,7 +118,11 @@ impl <'a>Request<'a> {
         Request::raw_request(uri, Method::HEAD, "", headers)
     }
 
-    pub fn post(uri: &str, data: Option<&'static str>, headers: Option<Vec<(&str, &str)>>) -> String {
+    pub fn post(
+        uri: &str,
+        data: Option<&'static str>,
+        headers: Option<Vec<(&str, &str)>>) -> String {
+
         let len: &str = &data.unwrap_or("").len().to_string();
 
         let mut extra_headers = vec![("Content-Length", len)];
