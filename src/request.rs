@@ -114,7 +114,7 @@ impl <'a>Request<'a> {
     pub fn post(uri: &str, data: Option<&'static str>, headers: Option<Vec<(&str, &str)>>) -> String {
         let len: &str = &data.unwrap_or("").len().to_string();
 
-        let mut extra_headers: Vec<(&str, &str)> = vec![("Content-Length", len)];
+        let mut extra_headers = vec![("Content-Length", len)];
 
         extra_headers.append(&mut headers.unwrap());
 
