@@ -88,7 +88,7 @@ impl Request<'_> {
         }
     }
 
-    fn raw_request(uri: &str, method: Method, headers: Option<Vec<(&str, &str)>>) -> String {
+    fn raw_request(uri: &str, method: Method, data: &str, headers: Option<Vec<(&str, &str)>>) -> String {
         let request = Request::new(
             uri, Some(method), None, headers);
         
@@ -104,33 +104,21 @@ impl Request<'_> {
     }
 
     pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
-        Request::raw_request(uri, Method::GET, headers)   
+        Request::raw_request(uri, Method::GET, "", headers)   
     }
 
     pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
-        Request::raw_request(uri, Method::HEAD, headers)
+        Request::raw_request(uri, Method::HEAD, "", headers)
     }
 
     pub fn post(uri: &str, data: Option<&str>, headers: Option<Vec<(&str, &str)>>) -> String {
-        let mut extra_headers: Vec<(&str, &str)> = vec![];
-        
         let len: &str = &data.unwrap_or("").len().to_string();
 
-        extra_headers.push(("Content-Length", len));
+        let mut extra_headers: Vec<(&str, &str)> = vec![("Content-Length", len)];
 
-        extra_headers.append(&mut headers.unwrap_or(vec![]));
+        extra_headers.append(&mut headers.unwrap());
 
-        let request = Request::new(
-            uri, Some(Method::POST), data, Some(extra_headers));
-
-        let bytes = Connection::new(
-            request.hostname, request.wants_secure_connection, request.server_address)
-                .send(request.to_string());
-
-        println!("{}", request);
-
-        String::from_utf8_lossy(&bytes).to_string()
+        Request::raw_request(uri, Method::POST, data.unwrap_or(""), Some(extra_headers))
     }
 
-    pub fn patch(uri: &str, data: Option<String>, ) {}
 }
