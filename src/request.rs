@@ -18,7 +18,7 @@ pub struct Request<'a> {
     pub hostname: &'a str,
     pub body: &'static str,
 
-    server_address: &'a str,
+    server_address: (&'a str, &'a str),
     wants_secure_connection: bool
 }
 
@@ -36,11 +36,11 @@ impl Display for Request<'_> {
     }
 }
 
-impl Request<'_> {
+impl <'a>Request<'a> {
     pub fn new(
-        uri: &str,
+        uri: &'a str,
         method: Option<Method>,
-        body: Option<&str>,
+        body: Option<&'static str>,
         headers: Option<Vec<(&str, &str)>>
     ) -> Self {
 
@@ -76,7 +76,7 @@ impl Request<'_> {
             body: body.unwrap_or(""),
             hostname: hostname_without_path,
             wants_secure_connection: secure_connection,
-            server_address: format!("{}:{}", hostname_without_path, port).as_str(),
+            server_address: (hostname_without_path, port),
         }
     }
 
@@ -88,16 +88,16 @@ impl Request<'_> {
         }
     }
 
-    fn raw_request(uri: &str, method: Method, data: &str, headers: Option<Vec<(&str, &str)>>) -> String {
+    fn raw_request(uri: &str, method: Method, data: &'static str, headers: Option<Vec<(&str, &str)>>) -> String {
         let request = Request::new(
-            uri, Some(method), None, headers);
-        
+            uri, Some(method), Some(data), headers);
+
         dbg!(&request);
 
         let bytes = Connection::new(
             request.hostname,
             request.wants_secure_connection,
-            request.server_address
+            format!("{}:{}",request.server_address.0,request.server_address.1).as_str()
         ).send(request.to_string());
 
         String::from_utf8_lossy(&bytes).to_string()
@@ -111,14 +111,14 @@ impl Request<'_> {
         Request::raw_request(uri, Method::HEAD, "", headers)
     }
 
-    pub fn post(uri: &str, data: Option<&str>, headers: Option<Vec<(&str, &str)>>) -> String {
+    pub fn post(uri: &str, data: Option<&'static str>, headers: Option<Vec<(&str, &str)>>) -> String {
         let len: &str = &data.unwrap_or("").len().to_string();
 
         let mut extra_headers: Vec<(&str, &str)> = vec![("Content-Length", len)];
 
         extra_headers.append(&mut headers.unwrap());
 
-        Request::raw_request(uri, Method::POST, data.unwrap_or(""), Some(extra_headers))
+        Request::raw_request(uri, Method::POST, data.unwrap(), Some(extra_headers))
     }
 
 }

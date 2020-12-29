@@ -28,5 +28,14 @@ fn main() -> std::io::Result<()> {
 
     println!("{}", response);
 
+    let get_response = Request::get(&uri, Some(vec![]));
+
+    println!("{}", get_response);
+
+
+    let head_response = Request::head(&uri, Some(vec![]));
+
+    println!("{}", head_response);
+
     Ok(())
 }
