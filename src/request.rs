@@ -1,91 +1,29 @@
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::collections::HashMap;
 
 use super::Connection;
+use super::Headers;
+use super::Method;
+
 
 const HTTP_PORT: &str = "80";
 const HTTPS_PORT: &str = "443";
 const HTTP_VERSION: &str = "HTTP/1.1";
 
 #[derive(Debug)]
-pub struct Request {
-    pub path: String,
+pub struct Request<'a> {
+    pub path: &'a str,
     pub method: Method,
-    pub hostname: String,
-    pub body: String,
     pub headers: Headers,
-    pub query_params: Option<String>,
+    pub hostname: &'a str,
+    pub body: &'static str,
 
-    server_address: String,
+    server_address: &'a str,
     wants_secure_connection: bool
 }
 
-#[derive(Debug)]
-pub struct Headers {
-    headers: HashMap<String, String>
-}
 
-impl Display for Headers {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-        let mut headers_as_string = String::from("");
-
-        for (k, v) in self.headers.iter() {
-            headers_as_string = format!("{}{}: {}\r\n", headers_as_string, k, v);
-        }
-
-        f.write_str(headers_as_string.as_str())
-    }
-}
-
-impl Headers {
-    pub fn new(items: Vec<(&str, &str)>) -> Self {
-       let mut headers = Self {
-           headers: HashMap::new()
-       };
-
-       for (key, value) in items {
-           headers.headers.insert(key.to_string(), value.to_string());
-       }
-
-       headers
-    }
-
-    fn insert(&mut self, value: (String, String)) {
-        let (k, v) = value;
-        self.headers.insert(k, v);
-    }
-}
-
-#[derive(Debug)]
-pub enum Method {
-    GET,
-    HEAD,
-    POST,
-    DELETE,
-    PUT,
-    PATCH,
-    OPTIONS,
-    TRACE
-}
-
-impl Display for Method {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-        match *self {
-            Method::GET => f.write_str("GET"),
-            Method::HEAD => f.write_str("HEAD"),
-            Method::POST => f.write_str("POST"),
-            Method::DELETE => f.write_str("DELETE"),
-            Method::OPTIONS => f.write_str("OPTIONS"),
-            Method::PATCH => f.write_str("PATCH"),
-            Method::PUT => f.write_str("PUT"),
-            Method::TRACE => f.write_str("TRACE")
-        }
-    }
-}
-
-
-impl Display for Request {
+impl Display for Request<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f, "{} {} {}\r\n{}\r\n{}\r\n",
@@ -98,11 +36,11 @@ impl Display for Request {
     }
 }
 
-impl Request {
+impl Request<'_> {
     pub fn new(
         uri: &str,
         method: Option<Method>,
-        body: Option<String>,
+        body: Option<&str>,
         headers: Option<Vec<(&str, &str)>>
     ) -> Self {
 
@@ -125,18 +63,20 @@ impl Request {
             ("Host", hostname_without_path),
         ];
 
-        let map_headers = Headers::new(
-            headers.unwrap_or(default_headers));
+        let mut map_headers = Headers::new(default_headers);
+
+        for h in headers.unwrap() {
+            map_headers.insert(h);
+        }
 
         Self {
-            query_params: None,
+            path: path_params,
             headers: map_headers,
             method: method.unwrap(),
-            path: String::from(path_params),
-            body: body.unwrap_or(String::from("")),
+            body: body.unwrap_or(""),
+            hostname: hostname_without_path,
             wants_secure_connection: secure_connection,
-            hostname: String::from(hostname_without_path),
-            server_address: format!("{}:{}", hostname_without_path, port),
+            server_address: format!("{}:{}", hostname_without_path, port).as_str(),
         }
     }
 
@@ -148,56 +88,49 @@ impl Request {
         }
     }
 
-    fn raw_request(uri: &str, method: Method) -> String {
+    fn raw_request(uri: &str, method: Method, headers: Option<Vec<(&str, &str)>>) -> String {
         let request = Request::new(
-            uri, Some(method), None, None);
+            uri, Some(method), None, headers);
         
         dbg!(&request);
 
         let bytes = Connection::new(
-            &request.hostname,
+            request.hostname,
             request.wants_secure_connection,
-            &request.server_address
+            request.server_address
         ).send(request.to_string());
 
         String::from_utf8_lossy(&bytes).to_string()
     }
 
-    pub fn get(uri: &str) -> String {
-        Request::raw_request(uri, Method::GET)   
+    pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
+        Request::raw_request(uri, Method::GET, headers)   
     }
 
-    pub fn head(uri: &str) -> String {
-        Request::raw_request(uri, Method::HEAD)
+    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
+        Request::raw_request(uri, Method::HEAD, headers)
     }
 
-    pub fn post(uri: &str, data: Option<String>, content_type: Option<&str>) -> Self {
+    pub fn post(uri: &str, data: Option<&str>, headers: Option<Vec<(&str, &str)>>) -> String {
         let mut extra_headers: Vec<(&str, &str)> = vec![];
         
-        let content_length = match data {
-            Some(content) => format!("{}", content.len()),
-            None => String::from("")
-        };
+        let len: &str = &data.unwrap_or("").len().to_string();
 
-        if data.is_some() {
-            extra_headers.push(
-                ("Content-Length", content_length.as_str())
-            );
-        }
+        extra_headers.push(("Content-Length", len));
 
-        if content_type.is_some() {
-            extra_headers.push(("Content-Type", content_type.unwrap()));
-        }
+        extra_headers.append(&mut headers.unwrap_or(vec![]));
 
         let request = Request::new(
-            uri,
-            Some(Method::POST),
-            data,
-            Some(extra_headers)
-        );
+            uri, Some(Method::POST), data, Some(extra_headers));
 
-        request
+        let bytes = Connection::new(
+            request.hostname, request.wants_secure_connection, request.server_address)
+                .send(request.to_string());
+
+        println!("{}", request);
+
+        String::from_utf8_lossy(&bytes).to_string()
     }
 
-    pub fn patch(uri: &str, data: Option<String>) {}
+    pub fn patch(uri: &str, data: Option<String>, ) {}
 }

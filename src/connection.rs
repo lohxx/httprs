@@ -22,7 +22,7 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn new(name: &String, secure_connection: bool, server_address: &String) -> Self {
+    pub fn new(name: &str, secure_connection: bool, server_address: &str) -> Self {
         let socket = TcpStream::connect(server_address)
             .expect("Não foi possivel se conectar no socket");
 

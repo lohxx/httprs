@@ -5,8 +5,12 @@
 
 mod request;
 mod connection;
+mod headers;
+mod methods;
 
 use request::Request;
+use methods::Method;
+use headers::Headers;
 use connection::Connection;
 
 use std::env;
@@ -18,16 +22,11 @@ fn main() -> std::io::Result<()> {
 
     let response = Request::post(
         &uri,
-        Some(String::from("{'id': 1, 'title': 'teste_post'}")),
-        Some("application/json")
+        Some(r#"{"id": 776, "title": "teste_post"}"#),
+        Some(vec![("content-type", "application/json")])
     );
 
-    //let get_response = Request::get(&uri);
-
-    //let head_response = Request::head(&uri);
-
     println!("{}", response);
-    //println!("{}", get_response);
 
     Ok(())
 }
