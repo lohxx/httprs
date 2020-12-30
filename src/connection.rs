@@ -23,6 +23,7 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(name: &str, secure_connection: bool, server_address: &str) -> Self {
+        dbg!(server_address);
         let socket = TcpStream::connect(server_address)
             .expect("Não foi possivel se conectar no socket");
 
@@ -35,7 +36,7 @@ impl Connection {
     }
 
     /// Envia a requisição para o servidor usando um meio criptografado.
-    fn send_via_secure_connection(&self, request: &str) -> Vec<u8> {
+    fn send_via_secure_connection(&self, request: &str) -> Vec<u8> {        
         let mut response = vec![];
 
         let mut stream = self.tls_connector.connect(

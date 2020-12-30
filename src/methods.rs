@@ -27,3 +27,13 @@ impl Display for Method {
         }
     }
 }
+
+
+impl Method {
+    pub fn should_set_content_length(&self) -> bool {
+        match self {
+            Method::PUT | Method::POST | Method::PATCH => true,
+            _ => false
+        }
+    }
+}

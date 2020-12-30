@@ -3,11 +3,13 @@
 #![allow(unused_variables)]
 #![allow(unused_must_use)]
 
+mod url;
 mod request;
 mod connection;
 mod headers;
 mod methods;
 
+use url::URL;
 use request::Request;
 use methods::Method;
 use headers::Headers;
@@ -20,22 +22,30 @@ fn main() -> std::io::Result<()> {
     let uri = args.next()
         .expect("É necessario fornecer um endereço");
 
-    let response = Request::post(
+    // let response = Request::post(
+    //     &uri,
+    //     Some(r#"{"id": 776, "title": "teste_post"}"#),
+    //     Some(vec![("content-type", "application/json")])
+    // );
+
+    // println!("{}", response);
+
+    // let get_response = Request::get(&uri, Some(vec![]));
+
+    // println!("{}", get_response);
+
+
+    // let head_response = Request::head(&uri, Some(vec![]));
+
+    // println!("{}", head_response);
+
+    let put_response = Request::put(
         &uri,
-        Some(r#"{"id": 776, "title": "teste_post"}"#),
+        Some(r#"{"id": 1, "title": "teste_post"}"#),
         Some(vec![("content-type", "application/json")])
     );
 
-    println!("{}", response);
-
-    let get_response = Request::get(&uri, Some(vec![]));
-
-    println!("{}", get_response);
-
-
-    let head_response = Request::head(&uri, Some(vec![]));
-
-    println!("{}", head_response);
+    println!("{}", put_response);
 
     Ok(())
 }

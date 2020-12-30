@@ -4,21 +4,20 @@ use std::fmt::Display;
 use super::Connection;
 use super::Headers;
 use super::Method;
+use super::URL;
 
 
 const HTTP_PORT: &str = "80";
 const HTTPS_PORT: &str = "443";
 const HTTP_VERSION: &str = "HTTP/1.1";
 
+
 #[derive(Debug)]
 pub struct Request<'a> {
-    pub path: &'a str,
+    pub url: URL<'a>,
     pub method: Method,
     pub headers: Headers<'a>,
-    pub hostname: &'a str,
     pub body: &'static str,
-
-    server_address: (&'a str, &'a str),
     wants_secure_connection: bool
 }
 
@@ -30,7 +29,7 @@ impl Display for Request<'_> {
         write!(
             f, "{} {} {}\r\n{}\r\n{}\r\n",
             self.method,
-            self.path,
+            self.url.path,
             HTTP_VERSION,
             self.headers,
             self.body
@@ -41,52 +40,35 @@ impl Display for Request<'_> {
 impl <'a>Request<'a> {
     pub fn new(
         uri: &'a str,
-        method: Option<Method>,
+        method: Method,
         body: Option<&'static str>,
         headers: Option<Vec<(&'a str, &'a str)>>
     ) -> Self {
 
-        let (host, port) = Request::scheme_port(&uri);
-
-        let (hostname_without_path, path_params) = match host.find('/') {
-            Some(byte_index) => (&host[..byte_index], &host[byte_index..]),
-            None => (host, "/")
-        };
+        let url = URL::parse(uri);
 
         let mut secure_connection = true; 
 
-        if port == HTTP_PORT {
+        if url.port == HTTP_PORT {
             secure_connection = false;
         }
-
-        let default_headers = vec![
+ 
+        let mut mapped_headers = Headers::new(vec![
             ("Accept", "*/*"),
             ("Connection", "close"),
-            ("Host", hostname_without_path),
-        ];
+            ("Host", url.hostname),
+        ]);
 
-        let mut map_headers = Headers::new(default_headers);
-
-        for h in headers.unwrap() {
-            map_headers.insert(h);
+        for header in headers.unwrap() {
+            &mapped_headers.insert(header);
         }
 
         Self {
-            path: path_params,
-            headers: map_headers,
-            method: method.unwrap(),
+            url,
+            method,
+            headers: mapped_headers,
             body: body.unwrap_or(""),
-            hostname: hostname_without_path,
             wants_secure_connection: secure_connection,
-            server_address: (hostname_without_path, port),
-        }
-    }
-
-    fn scheme_port(hostname: &str) -> (&str, &str) {
-        match &hostname[..5] {
-            "http:" => (&hostname[7..], "80"),
-            "https" => (&hostname[8..], "443"),
-            _ => (&hostname, "80")
         }
     }
 
@@ -97,14 +79,14 @@ impl <'a>Request<'a> {
         headers: Option<Vec<(&str, &str)>>) -> String {
 
         let request = Request::new(
-            uri, Some(method), Some(data), headers);
+            uri, method, Some(data), headers);
 
         dbg!(&request);
 
         let bytes = Connection::new(
-            request.hostname,
+            request.url.hostname,
             request.wants_secure_connection,
-            format!("{}:{}",request.server_address.0,request.server_address.1).as_str()
+            request.url.server_address().as_str()
         ).send(request.to_string());
 
         String::from_utf8_lossy(&bytes).to_string()
@@ -132,4 +114,17 @@ impl <'a>Request<'a> {
         Request::raw_request(uri, Method::POST, data.unwrap(), Some(extra_headers))
     }
 
+    pub fn put(
+        uri: &str,
+        data: Option<&'static str>,
+        headers: Option<Vec<(&str, &str)>>) -> String {
+        
+        let len: &str = &data.unwrap_or("").len().to_string();
+
+        let mut extra_headers = vec![("Content-Length", len)];
+
+        extra_headers.append(&mut headers.unwrap());
+        
+        Request::raw_request(uri, Method::PUT, data.unwrap(), Some(extra_headers))
+    }
 }
