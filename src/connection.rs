@@ -1,17 +1,8 @@
-extern crate rustls;
-extern crate native_tls;
-
-use std::io;
-use io::Read;
-use io::Write;
-use native_tls::{TlsConnector, TlsStream};
-
-use rustls::*;
-use webpki;
-use webpki_roots;
-
 use std::fmt::Debug;
 use std::net::TcpStream;
+use std::io::{Read, Write};
+use native_tls::{TlsConnector, TlsStream};
+
 
 #[derive(Debug)]
 pub struct Connection {
@@ -23,7 +14,6 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(name: &str, secure_connection: bool, server_address: &str) -> Self {
-        dbg!(server_address);
         let socket = TcpStream::connect(server_address)
             .expect("Não foi possivel se conectar no socket");
 
@@ -48,16 +38,26 @@ impl Connection {
 
         stream.read_to_end(&mut response);
 
-        return response;
+        response
     }
 
-    pub fn send(&self, request: String) -> Vec<u8> {     
+    /// Envia a requisição para o servidor via meio inseguro
+    pub fn send_via_unsecure_connection(&mut self, request: String) -> Vec<u8> {
+        let mut response = vec![];
+
+        self.tcp_socket.write_all(request.as_bytes()).unwrap();
+        
+        self.tcp_socket.read_to_end(&mut response).unwrap();
+
+        response
+    }
+
+    pub fn send(&mut self, request: String) -> Vec<u8> {     
         if self.wants_secure_connection {
             return self.send_via_secure_connection(request.as_str());            
         }
 
-        // Implementar envio via conexão não segura.
-        vec![]
+        self.send_via_unsecure_connection(request)
     }
 
 }
