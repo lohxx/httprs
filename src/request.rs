@@ -21,13 +21,13 @@ pub struct Request<'a> {
     wants_secure_connection: bool
 }
 
-// TODO: Lidar com compressão e conexões persistentes.
+// TODO: Lidar com compressão, conexões persistentes e adicionar gerenciamento de erros.
 
 
 impl Display for Request<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
-            f, "{} {} {}\r\n{}\r\n{}\r\n",
+            f, "{} {} {}\r\n{}\r\n{}",
             self.method,
             self.url.path,
             HTTP_VERSION,
@@ -47,16 +47,13 @@ impl <'a>Request<'a> {
 
         let url = URL::parse(uri);
 
-        let mut secure_connection = true; 
-
-        if url.port == HTTP_PORT {
-            secure_connection = false;
-        }
+        let secure_connection = match url.scheme {"http" => false, "https" => true, _ => false}; 
  
         let mut mapped_headers = Headers::new(vec![
             ("Accept", "*/*"),
             ("Connection", "close"),
             ("Host", url.hostname),
+            ("User-Agent", "httprs")
         ]);
 
         for header in headers.unwrap() {
@@ -80,15 +77,16 @@ impl <'a>Request<'a> {
 
         let request = Request::new(
             uri, method, Some(data), headers);
-
+        
         dbg!(&request);
+        println!("{}", request);
 
         let bytes = Connection::new(
             request.url.hostname,
             request.wants_secure_connection,
             request.url.server_address().as_str()
         ).send(request.to_string());
-
+ 
         String::from_utf8_lossy(&bytes).to_string()
     }
 

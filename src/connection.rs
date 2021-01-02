@@ -42,14 +42,14 @@ impl Connection {
     }
 
     /// Envia a requisição para o servidor via meio inseguro
-    pub fn send_via_unsecure_connection(&mut self, request: String) -> Vec<u8> {
+    pub fn send_via_unsecure_connection(&mut self, request: &str) -> Result<Vec<u8>, std::io::Error> {
         let mut response = vec![];
 
-        self.tcp_socket.write_all(request.as_bytes()).unwrap();
-        
-        self.tcp_socket.read_to_end(&mut response).unwrap();
+        self.tcp_socket.write(request.as_bytes())?;
 
-        response
+        self.tcp_socket.read_to_end(&mut response)?;
+
+        Ok(response)
     }
 
     pub fn send(&mut self, request: String) -> Vec<u8> {     
@@ -57,7 +57,7 @@ impl Connection {
             return self.send_via_secure_connection(request.as_str());            
         }
 
-        self.send_via_unsecure_connection(request)
+        self.send_via_unsecure_connection(request.as_str()).unwrap_or(vec![])
     }
 
 }
