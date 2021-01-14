@@ -8,12 +8,14 @@ mod request;
 mod connection;
 mod headers;
 mod methods;
+mod response;
 
 use crate::url::URL;
 use request::Request;
 use methods::Method;
 use headers::Headers;
 use connection::Connection;
+use response::Response;
 
 use std::env;
 

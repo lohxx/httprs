@@ -5,6 +5,7 @@ use super::Connection;
 use super::Headers;
 use super::Method;
 use super::URL;
+use super::Response;
 
 
 const HTTP_PORT: &str = "80";
@@ -16,22 +17,26 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 pub struct Request<'a> {
     pub url: URL<'a>,
     pub method: Method,
-    pub headers: Headers<'a>,
+    pub headers: Vec<Headers<'a>>,
     pub body: &'static str,
     wants_secure_connection: bool
 }
 
 // TODO: Lidar com compressão, conexões persistentes e adicionar gerenciamento de erros.
 
-
 impl Display for Request<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let textual_headers: String = self.headers
+            .iter()
+            .map(|h| h.to_string())
+            .collect();
+
         write!(
             f, "{} {} {}\r\n{}\r\n{}",
             self.method,
             self.url.path,
             HTTP_VERSION,
-            self.headers,
+            textual_headers,
             self.body
         )
     }
@@ -48,16 +53,17 @@ impl <'a>Request<'a> {
         let url = URL::parse(uri);
 
         let secure_connection = match url.scheme {"http" => false, "https" => true, _ => false}; 
- 
-        let mut mapped_headers = Headers::new(vec![
-            ("Accept", "*/*"),
-            ("Connection", "close"),
-            ("Host", url.hostname),
-            ("User-Agent", "httprs")
-        ]);
-
+        
+        // required headers
+        let mut mapped_headers: Vec<Headers> = vec![
+            Headers::new(("Accept", "*/*")),
+            Headers::new(("Connection", "close")),
+            Headers::new(("Host", url.hostname)),
+            Headers::new(("User-Agent", "httprs"))
+        ];
+          
         for header in headers.unwrap() {
-            &mapped_headers.insert(header);
+            &mapped_headers.push(Headers::new(header));
         }
 
         Self {
@@ -90,18 +96,22 @@ impl <'a>Request<'a> {
         String::from_utf8_lossy(&bytes).to_string()
     }
 
-    pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
-        Request::raw_request(uri, Method::GET, "", headers)   
+    pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response {
+        let txt_response = Request::raw_request(uri, Method::GET, "", headers);
+        
+        Response::parse(txt_response)
     }
 
-    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> String {
-        Request::raw_request(uri, Method::HEAD, "", headers)
+    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response {
+        let txt_response = Request::raw_request(uri, Method::HEAD, "", headers);
+        
+        Response::parse(txt_response)
     }
 
     pub fn post(
         uri: &str,
         data: Option<&'static str>,
-        headers: Option<Vec<(&str, &str)>>) -> String {
+        headers: Option<Vec<(&str, &str)>>) -> Response {
 
         let len: &str = &data.unwrap_or("").len().to_string();
 
@@ -109,20 +119,24 @@ impl <'a>Request<'a> {
 
         extra_headers.append(&mut headers.unwrap());
 
-        Request::raw_request(uri, Method::POST, data.unwrap(), Some(extra_headers))
+        let txt_response = Request::raw_request(uri, Method::POST, data.unwrap(), Some(extra_headers));
+        
+        Response::parse(txt_response)
     }
 
     pub fn put(
         uri: &str,
         data: Option<&'static str>,
-        headers: Option<Vec<(&str, &str)>>) -> String {
+        headers: Option<Vec<(&str, &str)>>) -> Response {
         
         let len: &str = &data.unwrap_or("").len().to_string();
 
         let mut extra_headers = vec![("Content-Length", len)];
 
         extra_headers.append(&mut headers.unwrap());
-        
-        Request::raw_request(uri, Method::PUT, data.unwrap(), Some(extra_headers))
+
+        let txt_response = Request::raw_request(uri, Method::PUT, data.unwrap(), Some(extra_headers));
+ 
+        Response::parse(txt_response)
     }
 }
