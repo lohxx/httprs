@@ -82,10 +82,7 @@ impl <'a>Request<'a> {
         headers: Option<Vec<(&str, &str)>>) -> String {
 
         let request = Request::new(
-            uri, method, Some(data), headers);
-        
-        dbg!(&request);
-        println!("{}", request);
+            uri, method, Some(data), headers); 
 
         let bytes = Connection::new(
             request.url.hostname,
@@ -96,13 +93,12 @@ impl <'a>Request<'a> {
         String::from_utf8_lossy(&bytes).to_string()
     }
 
-    pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response {
-        let txt_response = Request::raw_request(uri, Method::GET, "", headers);
-        
-        Response::parse(txt_response)
+    pub fn get(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response<'a> {
+        let response = Request::raw_request(uri, Method::GET, "", headers);
+        Response::parse(response)
     }
 
-    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response {
+    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response<'a>{
         let txt_response = Request::raw_request(uri, Method::HEAD, "", headers);
         
         Response::parse(txt_response)
@@ -111,7 +107,7 @@ impl <'a>Request<'a> {
     pub fn post(
         uri: &str,
         data: Option<&'static str>,
-        headers: Option<Vec<(&str, &str)>>) -> Response {
+        headers: Option<Vec<(&str, &str)>>) -> Response<'a> {
 
         let len: &str = &data.unwrap_or("").len().to_string();
 
@@ -127,7 +123,7 @@ impl <'a>Request<'a> {
     pub fn put(
         uri: &str,
         data: Option<&'static str>,
-        headers: Option<Vec<(&str, &str)>>) -> Response {
+        headers: Option<Vec<(&str, &str)>>) -> Response<'a> {
         
         let len: &str = &data.unwrap_or("").len().to_string();
 
