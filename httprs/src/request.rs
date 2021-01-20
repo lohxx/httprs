@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::fmt::Display;
 
 use super::Connection;
-use super::Headers;
+use super::Header;
 use super::Method;
 use super::URL;
 use super::Response;
@@ -17,7 +17,7 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 pub struct Request<'a> {
     pub url: URL<'a>,
     pub method: Method,
-    pub headers: Vec<Headers<'a>>,
+    pub headers: Vec<Header<'a>>,
     pub body: &'static str,
     wants_secure_connection: bool
 }
@@ -55,15 +55,15 @@ impl <'a>Request<'a> {
         let secure_connection = match url.scheme {"http" => false, "https" => true, _ => false}; 
         
         // required headers
-        let mut mapped_headers: Vec<Headers> = vec![
-            Headers::new(("Accept", "*/*")),
-            Headers::new(("Connection", "close")),
-            Headers::new(("Host", url.hostname)),
-            Headers::new(("User-Agent", "httprs"))
+        let mut mapped_headers: Vec<Header> = vec![
+            Header::new(("Accept", "*/*")),
+            Header::new(("Connection", "close")),
+            Header::new(("Host", url.hostname)),
+            Header::new(("User-Agent", "httprs"))
         ];
           
         for header in headers.unwrap() {
-            &mapped_headers.push(Headers::new(header));
+            &mapped_headers.push(Header::new(header));
         }
 
         Self {
@@ -98,7 +98,7 @@ impl <'a>Request<'a> {
         Response::parse(response)
     }
 
-    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response<'a>{
+    pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response<'a> {
         let txt_response = Request::raw_request(uri, Method::HEAD, "", headers);
         
         Response::parse(txt_response)

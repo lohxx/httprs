@@ -13,7 +13,7 @@ pub mod response;
 use url::URL;
 use request::Request;
 use methods::Method;
-use headers::Headers;
+use headers::Header;
 use connection::Connection;
 use response::Response;
 
@@ -24,7 +24,7 @@ mod tests {
     
     #[test]
     fn test_head_request() {
-        let response = Request::head("https://github.com/lohxx", Some(vec![]));
-        //dbg!(response);
+        let response = Request::get("https://rickandmortyapi.com/api/character/21", Some(vec![]));
+        assert_eq!(response.status_code, String::from("200"));
     }
 }
