@@ -61,7 +61,7 @@ impl <'a>Request<'a> {
             Header::new(("Host", url.hostname)),
             Header::new(("User-Agent", "httprs"))
         ];
-          
+
         for header in headers.unwrap() {
             &mapped_headers.push(Header::new(header));
         }

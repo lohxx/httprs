@@ -6,6 +6,9 @@ use super::headers::Header;
 #[derive(Debug)]
 pub struct Response<'a> {
     pub status_code: String,
+    pub phrase: Option<String>,
+    pub cookies: Option<String>,
+
     body: Option<String>,
     headers: Option<Vec<Header<'a>>>,
     response_text: String
@@ -22,7 +25,7 @@ impl Display for Response<'_> {
 impl Response<'_> {
     pub fn parse(response_text: String) -> Self {
         let mut headers = vec![];
-        let mut body: Option<String> = None;
+        let mut body: Option<&str> = None;
         let mut response_lines = response_text.lines();
     
         // A primeira linha de uma resposta é sempre a de status.
@@ -47,12 +50,7 @@ impl Response<'_> {
             headers.push(Header::from(header_line));
         };
 
-        match response_lines.next() {
-            Some(body) => {
-                println!("{}", body);
-            },
-            _ => ()
-        }
+        body = response_lines.next();
 
         dbg!(headers);
 
@@ -60,6 +58,8 @@ impl Response<'_> {
             body: Some(response_text.clone()),
             status_code: status_line[1].to_string(),
             headers: None,
+            phrase: None,
+            cookies: None,
             response_text: response_text
         }
     }
