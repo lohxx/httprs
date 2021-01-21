@@ -39,11 +39,12 @@ impl Response<'_> {
         };
 
         while let Some(header_line) = response_lines.next() {
-            if header_line.len() == 0{
-                // começa o body
+            if header_line.len() == 0 {
+                // começa o body, testar tbm com chunked body
                 break;
             }
-            headers.push(header_line);
+
+            headers.push(Header::from(header_line));
         };
 
         match response_lines.next() {

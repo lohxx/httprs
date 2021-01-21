@@ -26,5 +26,6 @@ mod tests {
     fn test_head_request() {
         let response = Request::get("https://rickandmortyapi.com/api/character/21", Some(vec![]));
         assert_eq!(response.status_code, String::from("200"));
+        //assert_eq!();
     }
 }

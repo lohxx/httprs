@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::convert::TryFrom;
+use std::convert::{From};
 use std::collections::HashMap;
 
 
@@ -10,22 +10,18 @@ pub struct Header<'a> {
     value: &'a str
 }
 
-impl TryFrom<&str> for Header<'_> {
-    type Error = &'static str;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+impl <'a>From<&'a str> for Header<'a> {
+    fn from(value: &'a str) -> Self {
         let values: Vec<&str> = value.split(":").collect();
-        dbg!(values);
-        if !values.len() > 1 {
-            return Err("Header invalido")
-        }
 
-        Ok(Self {
+        Self {
             name: values[0],
             value: values[1]
-        })
+        }
     }
 }
+
 
 impl Display for Header<'_> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {

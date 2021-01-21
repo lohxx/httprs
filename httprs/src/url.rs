@@ -15,8 +15,6 @@ impl <'u>URL<'u> {
     pub fn parse(uri: &'u str) -> Self {
         let (host, port, scheme) = URL::scheme_port(&uri);
 
-        dbg!(host);
-
         let (mut hostname_without_path, path) = match host.find('/') {
             Some(byte_index) => (&host[..byte_index], &host[byte_index..]),
             None => (host, "/")
@@ -26,8 +24,6 @@ impl <'u>URL<'u> {
             Some(index) => &hostname_without_path[..index-1],
             None => hostname_without_path
         };
-
-        dbg!(path);
 
         Self {
             path,
