@@ -23,9 +23,10 @@ mod tests {
     use super::Request;
     
     #[test]
-    fn test_head_request() {
+    fn test_get_request() {
         let response = Request::get("https://rickandmortyapi.com/api/character/21", Some(vec![]));
         assert_eq!(response.status_code, String::from("200"));
+        dbg!(response);
         //assert_eq!();
     }
 }

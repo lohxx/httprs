@@ -56,14 +56,14 @@ impl <'a>Request<'a> {
         
         // required headers
         let mut mapped_headers: Vec<Header> = vec![
-            Header::new(("Accept", "*/*")),
-            Header::new(("Connection", "close")),
-            Header::new(("Host", url.hostname)),
-            Header::new(("User-Agent", "httprs"))
+            Header::from(("Accept", "*/*")),
+            Header::from(("Connection", "close")),
+            Header::from(("Host", url.hostname)),
+            Header::from(("User-Agent", "httprs"))
         ];
 
         for header in headers.unwrap() {
-            &mapped_headers.push(Header::new(header));
+            &mapped_headers.push(Header::from(header));
         }
 
         Self {
@@ -100,8 +100,8 @@ impl <'a>Request<'a> {
 
     pub fn head(uri: &str, headers: Option<Vec<(&str, &str)>>) -> Response<'a> {
         let txt_response = Request::raw_request(uri, Method::HEAD, "", headers);
-        
-        Response::parse(txt_response)
+        unimplemented!()
+        //Response::parse(txt_response)
     }
 
     pub fn post(
@@ -117,7 +117,8 @@ impl <'a>Request<'a> {
 
         let txt_response = Request::raw_request(uri, Method::POST, data.unwrap(), Some(extra_headers));
         
-        Response::parse(txt_response)
+        unimplemented!()
+        //Response::parse(txt_response)
     }
 
     pub fn put(
@@ -132,7 +133,8 @@ impl <'a>Request<'a> {
         extra_headers.append(&mut headers.unwrap());
 
         let txt_response = Request::raw_request(uri, Method::PUT, data.unwrap(), Some(extra_headers));
- 
-        Response::parse(txt_response)
+        
+        unimplemented!()
+        //Response::parse(txt_response)
     }
 }

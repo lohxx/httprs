@@ -6,8 +6,8 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Header<'a> {
-    name: &'a str,
-    value: &'a str
+    pub name: &'a str,
+    pub value: &'a str
 }
 
 
@@ -22,19 +22,18 @@ impl <'a>From<&'a str> for Header<'a> {
     }
 }
 
+impl <'a>From<(&'a str, &'a str)> for Header<'a> {
+    fn from(header: (&'a str, &'a str)) -> Self {
+        Self {
+            name: header.0,
+            value: header.1
+        }
+    }
+}
+
 
 impl Display for Header<'_> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
         f.write_str(format!("{}: {}\n", self.name, self.value).as_str())
-    }
-}
-
-impl <'a>Header<'a> {
-    /// Cria um objeto do tipo header.
-    pub fn new(items: (&'a str, &'a str)) -> Self {
-        Header {
-            name: items.0,
-            value: items.1
-        }
     }
 }
