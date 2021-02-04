@@ -9,8 +9,6 @@ use super::URL;
 use super::Response;
 
 
-const HTTP_PORT: &str = "80";
-const HTTPS_PORT: &str = "443";
 const HTTP_VERSION: &str = "HTTP/1.1";
 
 #[derive(Hash, Eq, PartialEq, Debug)]
