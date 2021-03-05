@@ -18,6 +18,8 @@ use headers::Header;
 use connection::Connection;
 use response::Response;
 
+use serde_json::{Result, Value};
+
 
 #[cfg(test)]
 mod test_request {
@@ -37,10 +39,31 @@ mod test_request {
         let response = Request::head("https://http.cat/201", None, None);
         assert_eq!(response.body, None);
         assert_eq!(response.status_code, 200);
+        assert_eq!(response.phrase, "OK");
     }
 
     #[test]
-    fn post() {}
+    fn post() {
+        // ("Connection", "keep-alive")
+        let data = Some(r#"{"title": "foo", "body": "bar", "userId": 3}"#);
+        let headers = Some(vec![("Content-Type", "application/json")]);
+        let response = Request::post(
+            "https://jsonplaceholder.typicode.com/posts", data, headers, None);
+        assert_eq!(response.status_code, 201);
+        assert_eq!(response.phrase, "Created");
+    }
 
-    fn put(){}
+    #[test]
+    fn put() {
+        let data = Some(r#"{"title": "foo", "body": "bar", "userId": 3}"#);
+        let headers = Some(vec![("Content-Type", "application/json")]);
+        let response = Request::put(
+            "https://jsonplaceholder.typicode.com/posts/1", data, headers, None);
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.phrase, "OK");
+        dbg!(response);
+
+        //serde_json::from_str(response.body.unwrap().as_str()).unwrap();
+
+    }
 }

@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::net::TcpStream;
+use std::net::{TcpStream, Shutdown};
 use std::io::{Read, Write};
 use native_tls::{TlsConnector, TlsStream};
 
@@ -9,9 +9,10 @@ pub struct Connection {
     address: String,
     tcp_socket: TcpStream,
     wants_secure_connection: bool, 
-    tls_connector: TlsConnector
+    tls_connector: TlsConnector,
 }
 
+// Precisa ser um singleton para segurar a conexão????
 impl Connection {
     pub fn new(name: &str, secure_connection: bool, server_address: &str) -> Self {
         let socket = TcpStream::connect(server_address)
@@ -26,7 +27,7 @@ impl Connection {
     }
 
     /// Envia a requisição para o servidor usando um meio criptografado.
-    fn send_via_secure_connection(&self, request: &str) -> Vec<u8> {        
+    fn send_via_secure_connection(&mut self, request: &str) -> Vec<u8> {        
         let mut response = vec![];
 
         let mut stream = self.tls_connector.connect(
@@ -42,7 +43,7 @@ impl Connection {
     }
 
     /// Envia a requisição para o servidor via meio inseguro
-    pub fn send_via_unsecure_connection(&mut self, request: &str) -> Result<Vec<u8>, std::io::Error> {
+    fn send_via_unsecure_connection(&mut self, request: &str) -> Result<Vec<u8>, std::io::Error> {
         let mut response = vec![];
 
         self.tcp_socket.write(request.as_bytes())?;

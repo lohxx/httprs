@@ -8,8 +8,10 @@ use super::Method;
 use super::URL;
 use super::Response;
 
+// Faltam os metodos, delete, connect, trace e options
 
 const HTTP_VERSION: &str = "HTTP/1.1";
+const MAX_TIMEOUT: u8 = 5;
 
 #[derive(Hash, Eq, PartialEq, Debug)]
 pub struct QueryParam {
@@ -98,6 +100,10 @@ impl <'a>Request<'a> {
         if headers.is_some() {
             for header in headers.unwrap() {
                 &mapped_headers.push(Header::from(header));
+
+                if header.0 == "Connection" && (header.1 != "close" || header.1 != "Close") {
+                    &mapped_headers.push(Header::from(("Keep-Alive", "timeout=5; max=33")));
+                }
             }
         }
 
@@ -132,7 +138,7 @@ impl <'a>Request<'a> {
 
         let request = Request::new(
             uri, method, Some(data), headers, query_params);
-            
+
         println!("{}", request);
 
         let bytes = Connection::new(
@@ -140,6 +146,7 @@ impl <'a>Request<'a> {
             request.wants_secure_connection,
             request.url.server_address().as_str()
         ).send(request.to_string());
+
  
         String::from_utf8_lossy(&bytes).to_string()
     }
@@ -170,7 +177,9 @@ impl <'a>Request<'a> {
 
         let mut extra_headers = vec![("Content-Length", len)];
 
-        extra_headers.append(&mut headers.unwrap());
+        if headers.is_some() {
+            extra_headers.append(&mut headers.unwrap());
+        }
 
         let txt_response = Request::raw_request(
             uri, Method::POST, data.unwrap(), Some(extra_headers), query_params);
@@ -194,5 +203,25 @@ impl <'a>Request<'a> {
             uri, Method::PUT, data.unwrap(), Some(extra_headers), query_params);
         
         Response::parse(txt_response)
+    }
+
+    pub fn delete() -> Response {
+        unimplemented!()
+    }
+
+    pub fn trace() -> Response {
+        unimplemented!()
+    }
+
+    pub fn connect() -> Response {
+        unimplemented!()
+    }
+
+    pub fn options() -> Response {
+        unimplemented!()
+    }
+
+    pub fn patch() -> Response {
+        unimplemented!()
     }
 }
