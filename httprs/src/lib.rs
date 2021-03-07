@@ -61,9 +61,15 @@ mod test_request {
             "https://jsonplaceholder.typicode.com/posts/1", data, headers, None);
         assert_eq!(response.status_code, 200);
         assert_eq!(response.phrase, "OK");
-        dbg!(response);
 
         //serde_json::from_str(response.body.unwrap().as_str()).unwrap();
+    }
 
+    #[test]
+    fn delete() {
+        //possible success status codes
+        let possible_success_status = vec![200, 202, 204];
+        let response = Request::delete("https://jsonplaceholder.typicode.com/posts/1", None, None, None);
+        assert_eq!(possible_success_status.contains(&response.status_code), true);
     }
 }

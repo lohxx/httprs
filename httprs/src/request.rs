@@ -132,12 +132,12 @@ impl <'a>Request<'a> {
     fn raw_request(
         uri: &str,
         method: Method,
-        data: &'static str,
+        data: Option<&'static str>,
         headers: Option<Vec<(&str, &str)>>,
         query_params: Option<Vec<(String, String)>>) -> String {
 
         let request = Request::new(
-            uri, method, Some(data), headers, query_params);
+            uri, method, data, headers, query_params);
 
         println!("{}", request);
 
@@ -155,7 +155,7 @@ impl <'a>Request<'a> {
         uri: &str,
         headers: Option<Vec<(&str, &str)>>,
         query_params: Option<Vec<(String, String)>>) -> Response {
-        let mut response = Request::raw_request(uri, Method::GET, "", headers, query_params);
+        let mut response = Request::raw_request(uri, Method::GET, None, headers, query_params);
         Response::parse(response)
     }
 
@@ -163,7 +163,7 @@ impl <'a>Request<'a> {
         uri: &str,
         headers: Option<Vec<(&str, &str)>>,
         query_params: Option<Vec<(String, String)>>) -> Response {
-        let txt_response = Request::raw_request(uri, Method::HEAD, "", headers, query_params);
+        let txt_response = Request::raw_request(uri, Method::HEAD, None, headers, query_params);
         Response::parse(txt_response)
     }
 
@@ -178,11 +178,11 @@ impl <'a>Request<'a> {
         let mut extra_headers = vec![("Content-Length", len)];
 
         if headers.is_some() {
-            extra_headers.append(&mut headers.unwrap());
+            extra_headers.append(&mut headers.unwrap_or(vec![]));
         }
 
         let txt_response = Request::raw_request(
-            uri, Method::POST, data.unwrap(), Some(extra_headers), query_params);
+            uri, Method::POST, data, Some(extra_headers), query_params);
         
         Response::parse(txt_response)
     }
@@ -197,16 +197,35 @@ impl <'a>Request<'a> {
 
         let mut extra_headers = vec![("Content-Length", len)];
 
-        extra_headers.append(&mut headers.unwrap());
+        extra_headers.append(&mut headers.unwrap_or(vec![]));
 
         let txt_response = Request::raw_request(
-            uri, Method::PUT, data.unwrap(), Some(extra_headers), query_params);
+            uri, Method::PUT, data, Some(extra_headers), query_params);
         
         Response::parse(txt_response)
     }
 
-    pub fn delete() -> Response {
-        unimplemented!()
+    pub fn delete(
+        uri: &str,
+        data: Option<&'static str>, // Pq tem que ser str na interface??? sera que um generics não cairia melhor? 
+        headers: Option<Vec<(&str, &str)>>, // Um vetor de tuplas faz sentido?
+        query_params: Option<Vec<(String, String)>>
+    ) -> Response {
+        let len: &str = &data.unwrap_or("").len().to_string();
+
+        let mut extra_headers = vec![];
+
+        if len != "0" {
+            // tem corpo
+            extra_headers.push(("Content-Length", len));
+        }
+
+        extra_headers.append(&mut headers.unwrap_or(vec![]));
+
+        let txt_response = Request::raw_request(
+            uri, Method::DELETE, data, Some(extra_headers), query_params);
+        
+        Response::parse(txt_response)
     }
 
     pub fn trace() -> Response {

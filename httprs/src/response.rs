@@ -50,7 +50,7 @@ impl Response {
 
             if header_line.contains("Set-Cookie") {
                 // separar os cookies aqui
-                dbg!(header_line);
+                //dbg!(header_line);
             }
 
             let values: Vec<&str> = header_line.split(":").collect();
