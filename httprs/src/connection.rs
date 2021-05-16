@@ -1,7 +1,11 @@
 use std::fmt::Debug;
-use std::net::{TcpStream, Shutdown};
+use std::net::{TcpStream, SocketAddr, Shutdown};
 use std::io::{Read, Write};
 use native_tls::{TlsConnector, TlsStream};
+use std::ops::{Deref, DerefMut};
+
+
+use std::time::Duration;
 
 
 #[derive(Debug)]
@@ -10,17 +14,28 @@ pub struct Connection {
     tcp_socket: TcpStream,
     wants_secure_connection: bool, 
     tls_connector: TlsConnector,
+    timeout: Option<u64>
 }
 
 // Precisa ser um singleton para segurar a conexão????
 impl Connection {
-    pub fn new(name: &str, secure_connection: bool, server_address: &str) -> Self {
-        let socket = TcpStream::connect(server_address)
-            .expect("Não foi possivel se conectar no socket");
+    pub fn new(
+        name: &str,
+        secure_connection: bool,
+        server_address: &str,
+        timeout: Option<u64>) -> Self {
+
+        // let socket = match timeout {
+        //     Some(t) => TcpStream::connect_timeout(server_address, Duration::new(t)),
+        //     None => TcpStream::connect(server_address)
+        // }.expect("");
+
+        let socket = TcpStream::connect(server_address).expect("");
 
         Self {
-            address: name.to_string(),
+            timeout: timeout,
             tcp_socket: socket,
+            address: name.to_string(),
             tls_connector: TlsConnector::new().unwrap(),
             wants_secure_connection: secure_connection
         }
@@ -42,6 +57,7 @@ impl Connection {
         response
     }
 
+    
     /// Envia a requisição para o servidor via meio inseguro
     fn send_via_unsecure_connection(&mut self, request: &str) -> Result<Vec<u8>, std::io::Error> {
         let mut response = vec![];

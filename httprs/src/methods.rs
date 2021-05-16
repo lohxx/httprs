@@ -10,7 +10,6 @@ pub enum Method {
     PUT,
     PATCH,
     OPTIONS,
-    TRACE
 }
 
 impl Display for Method {
@@ -23,7 +22,6 @@ impl Display for Method {
             Method::OPTIONS => f.write_str("OPTIONS"),
             Method::PATCH => f.write_str("PATCH"),
             Method::PUT => f.write_str("PUT"),
-            Method::TRACE => f.write_str("TRACE")
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::collections::HashMap;
+use lazy_static::lazy_static;
 
 use super::Connection;
 use super::Header;
@@ -41,11 +42,11 @@ pub struct Request<'a> {
     pub headers: Vec<Header<'a>>,
     pub body: &'static str,
     pub query_params: Option<Vec<QueryParam>>,
+    pub keep_alive: bool,
     wants_secure_connection: bool
 }
 
 // TODO: Lidar com compressão, conexões persistentes e adicionar gerenciamento de erros.
-
 impl Display for Request<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let textual_headers: String = self.headers
@@ -97,11 +98,14 @@ impl <'a>Request<'a> {
             Header::from(("User-Agent", "httprs"))
         ];
 
+        let mut keep_alive = false;
+
         if headers.is_some() {
             for header in headers.unwrap() {
                 &mapped_headers.push(Header::from(header));
 
                 if header.0 == "Connection" && (header.1 != "close" || header.1 != "Close") {
+                    keep_alive = true;
                     &mapped_headers.push(Header::from(("Keep-Alive", "timeout=5; max=33")));
                 }
             }
@@ -118,6 +122,7 @@ impl <'a>Request<'a> {
         Self {
             url,
             method,
+            keep_alive: true,
             headers: mapped_headers,
             body: body.unwrap_or(""),
             wants_secure_connection: secure_connection,
@@ -138,15 +143,15 @@ impl <'a>Request<'a> {
 
         let request = Request::new(
             uri, method, data, headers, query_params);
-
-        println!("{}", request);
-
-        let bytes = Connection::new(
+        
+        let mut connection = Connection::new(
             request.url.hostname,
             request.wants_secure_connection,
-            request.url.server_address().as_str()
-        ).send(request.to_string());
-
+            request.url.server_address().as_str(),
+            None,
+        );
+        
+        let bytes = &connection.send(request.to_string());
  
         String::from_utf8_lossy(&bytes).to_string()
     }
@@ -228,19 +233,31 @@ impl <'a>Request<'a> {
         Response::parse(txt_response)
     }
 
-    pub fn trace() -> Response {
-        unimplemented!()
+    pub fn options(
+        uri: &str,
+        data: Option<&'static str>,
+        headers: Option<Vec<(&str, &str)>>,
+        query_params: Option<Vec<(String, String)>>
+    ) -> Response {
+        let mut response = Request::raw_request(uri, Method::OPTIONS, None, headers, query_params);
+        Response::parse(response)
     }
 
-    pub fn connect() -> Response {
-        unimplemented!()
-    }
+    pub fn patch(
+        uri: &str,
+        data: Option<&'static str>,
+        headers: Option<Vec<(&str, &str)>>,
+        query_params: Option<Vec<(String, String)>>) -> Response {
 
-    pub fn options() -> Response {
-        unimplemented!()
-    }
+        let len: &str = &data.unwrap_or("").len().to_string();
 
-    pub fn patch() -> Response {
-        unimplemented!()
+        let mut extra_headers = vec![("Content-Length", len)];
+
+        extra_headers.append(&mut headers.unwrap_or(vec![]));
+
+        let txt_response = Request::raw_request(
+            uri, Method::PATCH, data, Some(extra_headers), query_params);
+
+        Response::parse(txt_response)
     }
 }

@@ -3,6 +3,7 @@
 #![allow(unused_variables)]
 #![allow(unused_must_use)]
 #![allow(unused_mut)]
+#![recursion_limit="256"]
 
 pub mod url;
 pub mod request;
@@ -71,5 +72,27 @@ mod test_request {
         let possible_success_status = vec![200, 202, 204];
         let response = Request::delete("https://jsonplaceholder.typicode.com/posts/1", None, None, None);
         assert_eq!(possible_success_status.contains(&response.status_code), true);
+    }
+
+    #[test]
+    fn options() {
+        let response = Request::options("http://example.org", None, None, None);
+
+        assert_eq!(response.body, None);
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.phrase, "OK");
+        assert_eq!(response.headers.get("Allow").is_some(), true);
+    }
+
+
+    #[test]
+    fn patch() {
+        let data = Some(r#"{"title": "foo", "body": "bar", "userId": 3}"#);
+        let headers = Some(vec![("Content-Type", "application/json")]);
+        let response = Request::patch(
+            "https://jsonplaceholder.typicode.com/posts/1", data, headers, None);
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.phrase, "OK");
     }
 }
